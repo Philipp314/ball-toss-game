@@ -73,9 +73,8 @@
       width:max(100vw,100vh);
       height:max(100vw,100vh);
       bottom:0px;
-      background-image: url(image/venue.jpg);
+      background-image: url(image/mushroom cloud.png);
       background-size: cover;
-      //background-position: bottom;
       z-index:-1;
       transform: rotate(0deg);
     }
@@ -137,7 +136,7 @@
   <script name="Functions">
     function release(){
       rady=true;
-      result.style.backgroundImage = "url(https://i.imgur.com/PCClqK8.gif)";
+      result.style.backgroundImage = "url(image/speed line.gif)";
       score.style.display="block";
     }
     function setup(){
@@ -295,12 +294,12 @@
       result.style.height=null;
       result.style.top=null;
       result.style.left=null;
-      let backgroundList=["f7YZs3H","SP68vMe","R8Ku0Z7","7ufxRq7","RQPQ6Rp","6jKo0S6","lQnQ1rO","1aDFcgU","IWSPVfJ"];
+      let backgroundList=["court","auditorium","city","suburbs","field","waterfall","forest","ocean","neighboring countrie"];
       result.style.transform = "rotate(0deg)";
       let dis=Math.abs(distance);
       if(dis>=18000)
       {dis=17999;}
-      result.style.backgroundImage = "url(https://i.imgur.com/"+backgroundList[Math.floor(dis/2000)]+".jpg)";
+      result.style.backgroundImage = "url(image/"+backgroundList[Math.floor(dis/2000)]+".jpg)";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       LandingTime=0;
       if(distance<0)
