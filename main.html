@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" name="google" content="notranslate"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拋球遊戲</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: left;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow:hidden;
+      background-color:rgb(128,128,128);
+      justify-content: left;
+    }
+    .container {
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+    h1 {
+        text-align: center;
+        color: #0277bd;
+    }
+    p {
+        line-height: 1.6;
+        color: #01579b;
+    }
+    .restart {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+    }
+    .restart button {
+        background-color: #0288d1;
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .restart button:hover {
+        background-color: #0277bd;
+    }
+    table {
+      color: #01579b;
+      border-collapse: collapse;
+      width: 100%;
+      text-align: center;
+    }
+    th, td {
+      padding: 8px;
+      vertical-align: middle;
+    }
+    .small-row td {
+      padding: 0px;
+      font-size:2px;
+    }
+    
+    canvas {
+      background-color: #ffffff00;
+      height:100vh;
+      background-size: contain;
+    }
+    #result {
+      position:absolute;
+      width:max(100vw,100vh);
+      height:max(100vw,100vh);
+      bottom:0px;
+      background-image: url(https://i.imgur.com/LuhfUfC.jpg);
+      background-size: cover;
+      //background-position: bottom;
+      z-index:-1;
+      transform: rotate(0deg);
+    }
+    #score{
+      display: none;
+      position: absolute;
+      top: 7vh;
+      left: 7vh;
+      font-size: 50px;
+      color: #f00;
+    }
+    #news{
+      display: none; /* 初始時設置為不顯示 */
+      position:absolute;
+      width:calc(100vh / 1.414);
+      height:100vh;
+      background-image: url(https://i.imgur.com/XUZCZtT.png);
+      background-size: cover;
+      transform: translateX(100%) rotate(-720rad) scale(0.1); /* 旋轉360度並向下平移100% */
+      animation: rotate-in 1s linear forwards; /* 應用旋轉飛入動畫 */
+    }
+    @keyframes rotate-in {
+      0% {
+        transform: rotate(-2000deg) scale(0.1);
+        margin-left: 90vw;
+      }
+      100% {
+        transform: rotate(-10deg) scale(1);
+        margin-left: 0vw;
+      }
+    }
+    
+    #newsTitle{
+      display: grid;
+      place-items: center;
+      position: absolute;
+      width: calc(100vh / 1.414 - 6vh);
+      height: 11.5vh;
+      background-color: #00000000;
+      top: 6vh;
+      //text-align: center;
+      font-size: 4vh;
+    }
+    #newsPhoto{
+      position: absolute;
+      width: calc(100vh / 1.414 - 6vh);
+      height: 44vh;
+      background-size: cover;
+      background-position: bottom;
+      top: 17.5vh;
+    }
+    img{
+      height: 30vh;
+      position: absolute;
+      top: 7vh;
+      left: 17.5vh;
+    }
+  </style>
+  <script name="Functions">
+    function release(){
+      rady=true;
+      result.style.backgroundImage = "url(https://i.imgur.com/PCClqK8.gif)";
+      score.style.display="block";
+    }
+    function setup(){
+      r1 = 130;
+      r2 = 155;
+      r3 = 200;
+      m1 = 27;
+      m2 = 18;
+      m3 = 30;
+      a1 = Math.random() * 2 * Math.PI;
+      a2 = Math.random() * 2 * Math.PI;
+      a3 = Math.random() * 2 * Math.PI;
+      a1_v = Math.random() * 0.1 - 0.05;
+      a2_v = Math.random() * 0.1 - 0.05;
+      a3_v = Math.random() * 0.1 - 0.05;
+    }
+
+    function drawRady(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Calculate accelerations
+      let num1 = -g * (2 * m1 + m2 + m3) * Math.sin(a1);
+      let num2 = -m2 * g * Math.sin(a1 - 2 * a2);
+      let num3 = -2 * Math.sin(a1 - a2) * m2;
+      let num4 = a2_v * a2_v * r2 + a1_v * a1_v * r1 * Math.cos(a1 - a2);
+      let den = r1 * (2 * m1 + m2 + m3 - m2 * Math.cos(2 * a1 - 2 * a2));
+      let a1_a = (num1 + num2 + num3 * num4) / den;
+
+      num1 = 2 * Math.sin(a1 - a2);
+      num2 = (a1_v * a1_v * r1 * (m1 + m2) + g * (m1 + m2) * Math.cos(a1) + a2_v * a2_v * r2 * m2 * Math.cos(a1 - a2));
+      den = r2 * (2 * m1 + m2 + m3 - m2 * Math.cos(2 * a1 - 2 * a2));
+      let a2_a = (num1 * num2) / den;
+
+      num1 = 2 * Math.sin(a2 - a3);
+      num2 = (a2_v * a2_v * r2 * (m2 + m3) + g * (m2 + m3) * Math.cos(a2) + a3_v * a3_v * r3 * m3 * Math.cos(a2 - a3));
+      den = r3 * (2 * m2 + m3 - m3 * Math.cos(2 * a2 - 2 * a3));
+      let a3_a = (num1 * num2) / den;
+
+      // Update velocities and angles
+      a1_v += a1_a;
+      a2_v += a2_a;
+      a3_v += a3_a;
+      a1 += a1_v;
+      a2 += a2_v;
+      a3 += a3_v;
+
+      // Calculate positions
+      let x1 = r1 * Math.sin(a1);
+      let y1 = r1 * Math.cos(a1);
+      let x2 = x1 + r2 * Math.sin(a2);
+      let y2 = y1 + r2 * Math.cos(a2);
+      let x3 = x2 + r3 * Math.sin(a3);
+      let y3 = y2 + r3 * Math.cos(a3);
+
+      // Draw humen
+      ctx.translate(canvas.width / 3, canvas.height / 4);
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, -60, 30, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 233);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 233);
+      ctx.lineTo(83, 358);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(83,358);
+      ctx.lineTo(83,canvas.height);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 233);
+      ctx.lineTo(-83, 358);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-83, 358);
+      ctx.lineTo(-83,canvas.height);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(70.2, 109.4);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(70.2, 109.4);
+      ctx.lineTo(70.2, 264.4);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(70.2, 264.4, m2/2, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Draw pendulum
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x2, y2, m2/2, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x3, y3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x3, y3, m3/2, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.resetTransform();
+      if(rady){
+        clearInterval(drowRadyInte);
+        drawShot();
+      }
+    }
+    function drawShot(){
+      canvas.onclick = null;
+      hei=0;
+      distance=0;
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight;
+      document.body.style.justifyContent="center";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(canvas.width/2, canvas.height/2, m3/2, 0, 2 * Math.PI);
+      ctx.fill();
+      let vx=a3_v*Math.cos(a3);
+      let vy=a3_v*Math.sin(a3);
+      result.style.width="calc(200vw + 200vh)";
+      result.style.height="calc(200vw + 200vh)";
+      result.style.top="-50vh";
+      result.style.left="-50vw";
+      intervalId = setInterval(() => {
+        result.style.transform = `rotate(${-a3}rad)`;
+        hei += vy;
+        distance += vx;
+        vy -= g / 1000;
+        a3 = Math.atan(vy / vx);
+        score.innerHTML = String(Math.floor(distance * 50)) + " M";
+
+        if (hei <= 0) {
+          Landing(Math.floor(distance * 50));
+          clearInterval(intervalId); // Stop the interval when the condition is met
+        }
+      }, 10); // Interval of 10 milliseconds
+      
+    }
+    
+    function Landing(distance){
+      result.style.width=null;
+      result.style.height=null;
+      result.style.top=null;
+      result.style.left=null;
+      let backgroundList=["f7YZs3H","SP68vMe","R8Ku0Z7","7ufxRq7","RQPQ6Rp","6jKo0S6","lQnQ1rO","1aDFcgU","IWSPVfJ"];
+      result.style.transform = "rotate(0deg)";
+      let dis=Math.abs(distance);
+      if(dis>=18000)
+      {dis=17999;}
+      result.style.backgroundImage = "url(https://i.imgur.com/"+backgroundList[Math.floor(dis/2000)]+".jpg)";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      LandingTime=0;
+      if(distance<0)
+      {canvas.style.transform="scale(-1, 1)";}
+      let drop=document.getElementById("drop");
+      drop.currentTime = 0;
+      drop.play();
+      LandingShowInte=setInterval(LandingShow,10);
+    }
+    
+    function LandingShow(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(LandingTime, LandingTime**2/1000, m3/2, 0, 2 * Math.PI);
+      ctx.fill();
+      LandingTime+=10;
+      if(LandingTime>=canvas.width/2){
+        clearInterval(LandingShowInte);
+        MushroomCloud();
+      }
+    }
+    
+    function MushroomCloud(){
+      document.getElementById("drop").pause();
+      document.getElementById("explosion").play();
+      showNewsTout=setTimeout(showNews, 1500);
+      showNewsSound=setTimeout(newsSound, 2400);
+      let smokeParticles = [];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.width="320px";
+      canvas.style.height="180px";
+      for (let i = 0; i < 500; i++) {
+          smokeParticles.push(new Smoke());
+      }
+      animate = setInterval(() => {
+        ctx.fillStyle = "rgba(0, 0, 0, 0)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        smokeParticles.forEach(particle => {
+            particle.go(ctx);
+        });
+      }, 10);
+    }
+    function showNews(){
+      let dis=Math.floor(distance * 50);
+      let scoreListS=[100,477,2000,4000,6000,8000,10000,12000,14000,16000]
+      let scoreBG=["f7YZs3H","f7YZs3H","SP68vMe","R8Ku0Z7","7ufxRq7","RQPQ6Rp","6jKo0S6","lQnQ1rO","1aDFcgU","IWSPVfJ"]
+      let scoreListF=["拋球比賽成績優異，有望奪冠",
+                      "拋球傳奇！世界紀錄刷新震撼全場！",
+                      "悲劇：拋球飛入觀眾席致多人傷亡！",
+                      "拋球飛出場館 砸入市區引發混亂！",
+                      "拋球飛出市區！房屋受損，民眾驚！",
+                      "農田遭受拋球襲擊，農民損失慘重！",
+                      "拋球失控！觀光瀑布遭受重創！",
+                      "生態危機！拋球衝入，引發破壞！",
+                      "海嘯危機！拋球失控衝入大海！",
+                      "ବିଦେଶୀ ଆଥଲେଟ୍ଙ୍କ ଟସ୍ ହିଟ୍ ସିଟି ସେଣ୍ଟର୍ |"];
+      document.getElementById('newsTitle').innerHTML="拋球比賽選手失常，無緣晉級！";
+      document.getElementById('newsPhoto').style.backgroundImage="url(https://i.imgur.com/f7YZs3H.jpg)"
+      for(let i=0;i<10;i++){
+        if(Math.abs(dis)>scoreListS[i]){
+          document.getElementById('newsTitle').innerHTML=scoreListF[i]
+          document.getElementById('newsPhoto').style.backgroundImage=`url(https://i.imgur.com/${scoreBG[i]}.jpg)`
+        }
+      }
+      if(dis<0 && dis>-2000){
+        document.getElementById('newsTitle').innerHTML="拋球比賽失誤：選手創造逆天成績！";
+      }
+      document.getElementById('news').style.display="block";
+    }
+    function newsSound(){
+      let newsSound=document.getElementById("newsSound");
+      newsSound.currentTime = 0;
+      newsSound.play();
+    }
+    
+    function bigin(){
+      document.getElementById("bgMusic").volume=0.4;
+      document.getElementById("bgMusic").play();
+      
+      canvas = document.getElementById('pendulumCanvas');
+      canvas.onclick = release;
+      ctx = canvas.getContext('2d');
+      result = document.getElementById('result');
+      score = document.getElementById('score');
+      
+      setup();
+      drowRadyInte=setInterval(drawRady,10);
+    }
+    
+    function F5(){
+      event.preventDefault();
+      rady=false;
+      distance=0;
+      clearInterval(drowRadyInte);
+      clearInterval(LandingShowInte);
+      clearInterval(intervalId);
+      clearInterval(animate);
+      clearTimeout(showNewsTout);
+      clearTimeout(showNewsSound);
+      document.body.innerHTML=bodyInside;
+      document.body.style=null;
+      bigin();
+    }
+    function hint(){
+      let chButton=document.getElementById("chButton");
+      let thButton=document.getElementById("thButton");
+      if(chButton.innerHTML=="結局提示"){
+        document.getElementById("text").innerHTML="<table border='1'><tr><th>結局編號</th><td>1</td><td>2</td><td>3</td></tr><tr><th>分數條件</th><td>-2000 &lt; 距離 &lt; 0</td><td>0 &lt; 距離 &lt; 100</td><td>100 &lt; 距離 &lt; 477</td></tr><tr class='small-row'><td colspan='4'>&nbsp;</td></tr><tr><th>結局編號</th><td>4</td><td>5</td><td>6</td></tr><tr><th>分數條件</th><td>477 &lt; 距離 &lt; 2000</td><td>2000&lt; | 距離 |&lt; 4000</td><td>4000&lt; | 距離 |&lt; 6000</td></tr><tr class='small-row'><td colspan='4'>&nbsp;</td></tr><tr><th>結局編號</th><td>7</td><td>8</td><td>9</td></tr><tr><th>分數條件</th><td>6000&lt; | 距離 |&lt; 8000</td><td>8000&lt; | 距離 |&lt; 10000</td><td>10000&lt; | 距離 |&lt; 12000</td></tr><tr class='small-row'><td colspan='4'>&nbsp;</td></tr><tr><th>結局編號</th><td>10</td><td>11</td><td>12</td></tr><tr><th>分數條件</th><td>12000&lt; | 距離 |&lt; 14000</td><td>14000&lt; | 距離 |&lt; 16000</td><td>16000&lt; | 距離 |</td></tr></table>";
+        document.getElementById("title").innerHTML="結局提示";
+        thButton.innerHTML="致謝名單";
+        chButton.innerHTML="返回介紹";
+      }else{
+        document.getElementById("text").innerHTML="        <p>歡迎來到拋球遊戲！這是一個充滿挑戰與樂趣的遊戲。遊戲開始時，隨機產生的複擺會甩動球，玩家需要在適當的時機點擊角色釋放球，挑戰球飛越的距離。根據球飛越的距離，會有不同的結局等著你去探索，一共有12種不同的結局！</p><p>在遊戲過程中，你可以隨時按下F5鍵重新開始，體驗無限的挑戰與樂趣。</p>";
+        document.getElementById("title").innerHTML="拋球遊戲介紹";
+        chButton.innerHTML="結局提示";
+      }
+    }
+    function Thank(){
+      let thButton=document.getElementById("thButton");
+      let chButton=document.getElementById("chButton");
+      if(thButton.innerHTML=="致謝名單"){
+        document.getElementById("text").innerHTML="<table border='1'><tr><th>類別</th><th>單位/個人</th><th>連結</th></tr><tr><td rowspan='2'>圖像支援及運行環境</td><td>Stable Diffusion XL</td><td rowspan='2'><a href='https://huggingface.co/spaces/google/sdxl' target='_blank'>Hugging Face 頁面</a></td></tr><tr><td>由 Google Cloud TPU v5e 提供運行環境</td></tr><tr><td>圖片託管</td><td>Imger</td><td><a href='https://imger.com' target='_blank'>Imger 網站</a></td></tr><tr><td>音效支援</td><td>小森平的免費下載音效</td><td><a href='https://taira-komori.jpn.org/freesoundtw.html' target='_blank'>音效下載頁面</a></td></tr><tr><td>音樂支援</td><td>FreePD</td><td><a href='https://freepd.com' target='_blank'>FreePD 網站</a></td></tr><tr><td>網站託管</td><td>Neocities</td><td><a href='https://neocities.org' target='_blank'>Neocities 網站</a></td></tr></table><p>再次感謝以上所有單位和個人無私的貢獻和支持，沒有你們，這款遊戲將無法完成。祝願各位平安喜樂！</p>";
+        document.getElementById("title").innerHTML="特別鳴謝";
+        thButton.innerHTML="返回介紹";
+        chButton.innerHTML="結局提示";
+      }else{
+        document.getElementById("text").innerHTML="        <p>歡迎來到拋球遊戲！這是一個充滿挑戰與樂趣的遊戲。遊戲開始時，隨機產生的複擺會甩動球，玩家需要在適當的時機點擊角色釋放球，挑戰球飛越的距離。根據球飛越的距離，會有不同的結局等著你去探索，一共有12種不同的結局！</p><p>在遊戲過程中，你可以隨時按下F5鍵重新開始，體驗無限的挑戰與樂趣。</p>";
+        document.getElementById("title").innerHTML="拋球遊戲介紹";
+        thButton.innerHTML="致謝名單";
+      }
+    }
+  </script>
+  <script name="GlobalValue">
+    var rady=false;
+    var distance=0;
+
+    var r1, r2, r3;
+    var m1, m2, m3;
+    var a1, a2, a3;
+    var a1_v, a2_v, a3_v;
+    var hei,LandingTime,LandingWay;
+    const g = 9.8/50;
+    
+    
+    const bodyInside="<div id='result'></div><canvas id='pendulumCanvas' width='800' height='600'></canvas><div id='score'>0M</div><div id='news'><div id='newsTitle'></div><div id='newsPhoto'><img src='https://i.imgur.com/gBVat6e.png'></div></div><audio id='explosion' src='https://taira-komori.jpn.org/sound_os2/arms01/small_explosion2.mp3'></audio><audio id='drop' src='https://taira-komori.jpn.org/sound_os2/anime01/drop3.mp3'></audio><audio id='newsSound' src='https://taira-komori.jpn.org/sound_os2/anime01/surprise.mp3'></audio><audio id='bgMusic' src='https://freepd.com//music/City Run.mp3' loop></audio>"
+    class Smoke {
+      constructor() {
+        this.size = Math.random() * 50;
+        this.k = Math.random() * 2 - 1;
+        this.r = Math.floor(Math.random() * (255 - 128 + 1)) + 128;
+        this.g = Math.floor(Math.random() * (this.r + 1));
+        this.x = 0;
+        this.y = 0;
+        this.t = Math.random() * 2 * Math.PI;
+      }
+      go(ctx) {
+        this.t += 0.01;
+        this.x = this.k + this.k * (Math.sin(10 * Math.PI - this.t) / (this.t + 1));
+        this.y = 1 - (Math.cos(10 * Math.PI - this.t) / (this.t + 1) * (2 + (1 - this.k ** 2) ** 0.5) / 1.3);
+        if (this.t > 2 * Math.PI) {
+            this.t = 0;
+        }
+        ctx.fillStyle = `rgb(${this.r}, ${this.g}, 0)`;
+        ctx.beginPath();
+        ctx.arc(this.x * 200 + window.innerWidth/2, 600 - this.y * 300, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+    
+    var animate;
+    var intervalId;
+    var showNewsTout;
+    var drowRadyInte;
+    var LandingShowInte;
+    var showNewsSound;
+    
+    
+    var canvas = null;
+    var ctx = null;
+    var result = null;
+    var score = null;
+    
+    const drawRadyFunc=drawRady;
+    const LandingShowFunc=LandingShow;
+  </script>
+</head>
+<body style="background-color:#e0f7fa;">
+  <div class="container">
+      <h1 id="title">拋球遊戲介紹</h1>
+      <div id="text">
+        <p>歡迎來到拋球遊戲！這是一個充滿挑戰與樂趣的遊戲。遊戲開始時，隨機產生的複擺會甩動球，玩家需要在適當的時機點擊角色釋放球，挑戰球飛越的距離。根據球飛越的距離，會有不同的結局等著你去探索，一共有12種不同的結局！</p>
+        <p>在遊戲過程中，你可以隨時按下F5鍵重新開始，體驗無限的挑戰與樂趣。</p>
+      </div>
+      <div class="restart">
+          <button onclick="F5();">開始遊戲</button>
+          <button style="visibility: hidden;"></button>
+          <button id="chButton" onclick="hint();">結局提示</button>
+          <button style="visibility: hidden;"></button>
+          <button id="thButton" onclick="Thank();">致謝名單</button>
+      </div>
+  </div>
+  <script name="reset">
+    document.addEventListener('keydown', function(event) {
+      var key = event.key || event.keyCode;
+      // 按下 F5 鍵的 keycode 是 116
+      if (key === 'F5' || key === 116)
+      {F5();}
+    });
+  </script>
+</body>
+</html>
